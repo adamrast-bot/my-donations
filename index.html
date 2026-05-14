@@ -171,7 +171,7 @@
 </div>
 
 <script>
-  // Constants and Data Logic
+ // Constants and Logic
 const SA_VALUES = { 
   "Women's — Blouse": [3,12], "Women's — Coat": [10,41], "Women's — Dress": [4,20], 
   "Women's — Shoes": [2,26], "Men's — Shirt": [3,12], "Men's — Slacks": [5,12], 
@@ -179,11 +179,10 @@ const SA_VALUES = {
 };
 
 // 1. LOAD DATA ON STARTUP
-// We pull the string from storage and turn it back into a JavaScript array
 let items = JSON.parse(localStorage.getItem('donation_inventory')) || [];
 let currentImageURL = null;
 
-// Immediately update the table with any saved data
+// Initialize the UI if there is saved data
 updateUI();
 
 // Handle Image Upload
@@ -205,27 +204,75 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
 document.getElementById('addBtn').addEventListener('click', () => {
     const category = document.getElementById('category').value;
     const value = document.getElementById('valueField').value;
-    
-    if(!category || !value) return alert("Please select a category and value.");
+    if(!category || !value) return alert("Please fill details");
 
-    // Create the item object
-    const newItem = { 
-        category, 
-        value, 
-        img: currentImageURL 
-    };
-
-    // Add to our main array
-    items.push(newItem);
+    items.push({ category, value, img: currentImageURL });
     
-    // Save the updated array to the iPhone's storage
+    // 2. SAVE TO LOCALSTORAGE
     saveToDisk();
     
-    // Refresh the table and stats
     updateUI();
-    
-    // Clear the form for the next item
     resetForm();
+});
+
+function saveToDisk() {
+    localStorage.setItem('donation_inventory', JSON.stringify(items));
+}
+
+function deleteItem(idx) {
+    if(confirm("Delete this item?")) {
+        items.splice(idx, 1);
+        saveToDisk();
+        updateUI();
+    }
+}
+
+function updateUI() {
+    const tbody = document.getElementById('tableBody');
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#adb5bd;">No items saved yet.</td></tr>';
+    } else {
+        tbody.innerHTML = items.map((item, idx) => `
+            <tr>
+                <td><img src="${item.img || 'https://via.placeholder.com/50'}" style="width:50px; height:50px; border-radius:4px; object-fit:cover;"></td>
+                <td>
+                    <b>${item.category}</b>
+                    <div style="font-size:10px; color:#888;">ID: DON-${String(idx + 1).padStart(3, '0')}</div>
+                </td>
+                <td style="text-align:right;">
+                    <div style="font-weight:700;">$${parseFloat(item.value).toFixed(2)}</div>
+                    <button onclick="deleteItem(${idx})" style="border:none; background:none; color:#fa5252; font-size:11px; padding:4px 0;">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    document.getElementById('statItems').innerText = items.length;
+    const total = items.reduce((sum, i) => sum + parseFloat(i.value), 0);
+    document.getElementById('statValue').innerText = '$' + total.toFixed(0);
+    document.getElementById('statCats').innerText = new Set(items.map(i => i.category)).size;
+}
+
+function resetForm() {
+    document.getElementById('previewImg').style.display = 'none';
+    document.getElementById('previewImg').src = '';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('category').value = '';
+    document.getElementById('valueField').value = '';
+    document.getElementById('analyzeSection').style.display = 'none';
+    currentImageURL = null;
+}
+
+// Export CSV
+document.getElementById('exportBtn').addEventListener('click', () => {
+    if(items.length === 0) return alert("Nothing to export");
+    let csv = "Category,Value\n" + items.map(i => `${i.category},${i.value}`).join("\n");
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'donations.csv');
+    a.click();
 });
 </script>
 
