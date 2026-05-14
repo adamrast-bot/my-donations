@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Donation Tracker</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Donation Tracker">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/684/684930.png">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+    
+    <style>
+        /* CSS Variables for the requested look */
+        :root {
+            --color-background-primary: #ffffff;
+            --color-background-secondary: #f8f9fa;
+            --color-background-tertiary: #f1f3f5;
+            --color-background-danger: #fff5f5;
+            --color-background-info: #e7f5ff;
+            --color-text-primary: #212529;
+            --color-text-secondary: #495057;
+            --color-text-tertiary: #adb5bd;
+            --color-text-danger: #fa5252;
+            --color-text-info: #228be6;
+            --color-border-secondary: #dee2e6;
+            --color-border-tertiary: #e9ecef;
+            --color-border-danger: #ffc9c9;
+            --border-radius-md: 8px;
+            --border-radius-lg: 12px;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            font-family: var(--font-sans); 
+            background: var(--color-background-tertiary); 
+            color: var(--color-text-primary); 
+            min-height: 100vh;
+            padding-top: env(safe-area-inset-top); /* Fix for iPhone Notch */
+        }
+        
+        /* Mobile-First Layout Adjustment */
+        .app { display: flex; flex-direction: column; min-height: 100vh; }
+        
+        .sidebar { 
+            background: var(--color-background-primary); 
+            border-bottom: 0.5px solid var(--color-border-tertiary); 
+            padding: 1.25rem; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 1rem; 
+        }
+        
+        .logo { display: flex; align-items: center; gap: 10px; padding-bottom: 1rem; border-bottom: 0.5px solid var(--color-border-tertiary); }
+        .logo-icon { width: 34px; height: 34px; background: #1A3C5E; border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center; }
+        .logo-icon i { color: #fff; font-size: 18px; }
+        .logo-text { font-size: 14px; font-weight: 600; }
+        .logo-text span { display: block; font-size: 11px; font-weight: 400; color: var(--color-text-secondary); }
+
+        .upload-zone { border: 2px dashed var(--color-border-secondary); border-radius: var(--border-radius-lg); padding: 1.5rem; text-align: center; cursor: pointer; background: var(--color-background-primary); }
+        .upload-zone i { font-size: 32px; color: var(--color-text-tertiary); margin-bottom: 8px; display: block; }
+
+        .preview-img { width: 100%; border-radius: var(--border-radius-md); object-fit: cover; max-height: 250px; margin: 10px 0; border: 0.5px solid var(--color-border-tertiary); }
+
+        .field-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+        .field-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--color-text-secondary); }
+        
+        input, select, textarea { 
+            appearance: none; -webkit-appearance: none;
+            width: 100%; font-size: 16px; /* 16px prevents iOS auto-zoom on focus */
+            padding: 12px; border: 1px solid var(--color-border-secondary); 
+            border-radius: var(--border-radius-md); background: #fff;
+        }
+
+        .btn { 
+            padding: 14px; border-radius: var(--border-radius-md); font-size: 15px; font-weight: 600; 
+            border: none; cursor: pointer; width: 100%; margin-bottom: 8px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary { background: #1A3C5E; color: #fff; }
+        .btn-secondary { background: var(--color-background-secondary); color: var(--color-text-primary); border: 1px solid var(--color-border-secondary); }
+
+        .main { padding: 1.25rem; flex: 1; }
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .stat-card { background: #fff; padding: 12px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-tertiary); text-align: center; }
+        .stat-val { font-size: 18px; font-weight: 700; color: #1A3C5E; }
+
+        .table-wrap { overflow-x: auto; background: #fff; border-radius: var(--border-radius-lg); border: 0.5px solid var(--color-border-tertiary); }
+        .inv-table { width: 100%; border-collapse: collapse; }
+        .inv-table th { background: var(--color-background-secondary); padding: 12px; font-size: 10px; text-align: left; }
+        .inv-table td { padding: 12px; border-bottom: 0.5px solid var(--color-border-tertiary); font-size: 13px; }
+
+        /* Loader Animation */
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .analyzing { display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--color-text-info); font-weight: 500; margin-bottom: 15px; }
+
+    </style>
+</head>
+<body>
+
+<div class="app">
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="ti ti-shirt"></i></div>
+            <div class="logo-text">Donation Tracker <span>Salvation Army Guide</span></div>
+        </div>
+
+        <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none">
+            <i class="ti ti-camera-plus"></i>
+            <p><strong>Snap Photo</strong></p>
+        </div>
+
+        <img id="previewImg" class="preview-img" style="display:none">
+
+        <div id="analyzeSection" style="display:none">
+            <button class="btn btn-secondary" id="analyzeBtn">
+                <i class="ti ti-sparkles"></i> Identify with AI
+            </button>
+        </div>
+
+        <div id="analyzingMsg" class="analyzing" style="display:none">
+            <i class="ti ti-loader spin"></i>
+            <span>Analyzing...</span>
+        </div>
+
+        <div class="field-group">
+            <label class="field-label">Category</label>
+            <select id="category">
+                <option value="">Select category...</option>
+                <optgroup label="Women's">
+                    <option>Women's — Blouse</option><option>Women's — Coat</option><option>Women's — Dress</option><option>Women's — Shoes</option>
+                </optgroup>
+                <optgroup label="Men's">
+                    <option>Men's — Shirt</option><option>Men's — Slacks</option><option>Men's — Suit</option><option>Men's — Shoes</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label class="field-label">Fair Market Value ($)</label>
+            <input type="number" id="valueField" step="0.01" placeholder="0.00">
+        </div>
+
+        <button class="btn btn-primary" id="addBtn"><i class="ti ti-plus"></i> Add to List</button>
+    </aside>
+
+    <main class="main">
+        <div class="stats-row">
+            <div class="stat-card"><div class="stat-label" style="font-size:10px">ITEMS</div><div class="stat-val" id="statItems">0</div></div>
+            <div class="stat-card"><div class="stat-label" style="font-size:10px">TOTAL</div><div class="stat-val" id="statValue">$0</div></div>
+            <div class="stat-card"><div class="stat-label" style="font-size:10px">CATS</div><div class="stat-val" id="statCats">0</div></div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="inv-table">
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+        
+        <button class="btn btn-secondary" id="exportBtn" style="margin-top: 20px;">
+            <i class="ti ti-download"></i> Export CSV
+        </button>
+    </main>
+</div>
+
+<script>
+    // Constants and Logic
+    const SA_VALUES = { "Women's — Blouse": [3,12], "Women's — Coat": [10,41], "Women's — Dress": [4,20], "Women's — Shoes": [2,26], "Men's — Shirt": [3,12], "Men's — Slacks": [5,12], "Men's — Suit": [16,62], "Men's — Shoes": [4,26] };
+    let items = [];
+    let currentImageURL = null;
+
+    // Handle Image Upload
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            currentImageURL = ev.target.result;
+            const img = document.getElementById('previewImg');
+            img.src = currentImageURL;
+            img.style.display = 'block';
+            document.getElementById('analyzeSection').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Add Item Logic
+    document.getElementById('addBtn').addEventListener('click', () => {
+        const category = document.getElementById('category').value;
+        const value = document.getElementById('valueField').value;
+        if(!category || !value) return alert("Please fill details");
+
+        items.push({ category, value, img: currentImageURL });
+        updateUI();
+        resetForm();
+    });
+
+    function updateUI() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = items.map((item, idx) => `
+            <tr>
+                <td><img src="${item.img}" style="width:50px; height:50px; border-radius:4px; object-fit:cover;"></td>
+                <td><b>${item.category}</b></td>
+                <td>$${parseFloat(item.value).toFixed(2)}</td>
+            </tr>
+        `).join('');
+
+        document.getElementById('statItems').innerText = items.length;
+        const total = items.reduce((sum, i) => sum + parseFloat(i.value), 0);
+        document.getElementById('statValue').innerText = '$' + total.toFixed(0);
+        document.getElementById('statCats').innerText = new Set(items.map(i => i.category)).size;
+    }
+
+    function resetForm() {
+        document.getElementById('previewImg').style.display = 'none';
+        document.getElementById('category').value = '';
+        document.getElementById('valueField').value = '';
+        document.getElementById('analyzeSection').style.display = 'none';
+    }
+
+    // Export CSV
+    document.getElementById('exportBtn').addEventListener('click', () => {
+        let csv = "Category,Value\n" + items.map(i => `${i.category},${i.value}`).join("\n");
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'donations.csv');
+        a.click();
+    });
+</script>
+
+</body>
+</html>
