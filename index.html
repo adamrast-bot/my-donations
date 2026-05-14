@@ -205,13 +205,28 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
 document.getElementById('addBtn').addEventListener('click', () => {
     const category = document.getElementById('category').value;
     const value = document.getElementById('valueField').value;
+    
     if(!category || !value) return alert("Please select a category and value.");
 
     // Create the item object
     const newItem = { 
         category, 
         value, 
-        img: currentImageURL,
+        img: currentImageURL 
+    };
+
+    // Add to our main array
+    items.push(newItem);
+    
+    // Save the updated array to the iPhone's storage
+    saveToDisk();
+    
+    // Refresh the table and stats
+    updateUI();
+    
+    // Clear the form for the next item
+    resetForm();
+});
 </script>
 
 </body>
